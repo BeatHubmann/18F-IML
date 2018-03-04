@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2018 Beat Hubmann, ETHZ 252-0220-00L Course Team
+Copyright (c) 2018 Beat Hubmann, ETHZ IML (252-0220-00L) course team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
