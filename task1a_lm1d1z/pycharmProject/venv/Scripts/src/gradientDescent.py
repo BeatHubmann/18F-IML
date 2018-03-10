@@ -44,15 +44,3 @@ class BoldDriverEvolution(LearningRateEvolutionFunction):
 
 
 
-
-
-def boldDriver(currentLearningRate, lossFunction, coefHistory):
-    currentLoss = lossFunction.evalLoss(coefHistory[len(coefHistory)-1])
-    lastLoss = lossFunction.evalLoss(coefHistory[len(coefHistory) - 2])
-
-    if (currentLoss < lastLoss):
-        return currentLearningRate * 1.1
-    else:
-        return currentLearningRate * 0.5
-
-

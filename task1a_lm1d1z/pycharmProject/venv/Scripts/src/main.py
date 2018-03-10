@@ -1,9 +1,8 @@
 import pandas as pd
 import numpy as np
-import gradientDescent as gd
-import regression
-import util
-import matplotlib.pyplot as plt
+import task1a_lm1d1z.pycharmProject.venv.Scripts.src.gradientDescent as gd
+import task1a_lm1d1z.pycharmProject.venv.Scripts.src.regression as regression
+from task1a_lm1d1z.pycharmProject.venv.Scripts.src.util import makeDatapointsToVectors, loadFromCSV
 
 myLambda = 100
 myLearingRate = 0.1
@@ -14,12 +13,8 @@ numSamples = 100
 
 trainPercentage = 0.9
 
-pSrc = np.poly1d([0.9,0.0,-1.9, 0.5, 0.9])
-plotXValues = np.arange(-1,1,0.01)
-
-
-
-
+pSrc = np.poly1d([0.9, 0.0, -1.9, 0.5, 0.9])
+plotXValues = np.arange(-1, 1, 0.01)
 
 """
 A, YTrain = util.generateDataFromPolynomial(pSrc, -1, 1, numSamples, 0.5)
@@ -34,20 +29,13 @@ for i in range(len(XTrain)):
         XTrain[i] += [pow(A[i], numCoefs - j - 1)]
 """
 
-
-
-XComplete, YComplete = util.loadFromCSV("../../../../train.csv", 10, 1)
+XComplete, YComplete = loadFromCSV("../../../../train.csv", 10, 1)
 
 numSamples = len(XComplete)
 numTrainingSamples = int(trainPercentage * numSamples)
 
-XTrain = XComplete[0 : numTrainingSamples, :]
-YTrain = YComplete[0 : numTrainingSamples, :]
 
-XTest = XComplete[numTrainingSamples : len(XComplete), :]
-YTest = YComplete[numTrainingSamples : len(YComplete), :]
-
-for k in range (10):
+for k in range(10):
 
     XTrain = XComplete[0: numTrainingSamples, :]
     YTrain = YComplete[0: numTrainingSamples, :]
@@ -55,19 +43,13 @@ for k in range (10):
     XTest = XComplete[numTrainingSamples: len(XComplete), :]
     YTest = YComplete[numTrainingSamples: len(YComplete), :]
 
-    xDataVec = [None] * len(XTrain)
-
-    for i in range(len(xDataVec)):
-        xDataVec[i] = np.array(XTrain[i])
-
-    yDataVec = [None] * len(YTrain)
-    for i in range(len(yDataVec)):
-        yDataVec[i] = YTrain[i]
-
+    xDataVec = makeDatapointsToVectors(XTrain)
+    yDataVec = YTrain #No manipulations necessary
 
     ridgeRegressionLossFunction = regression.RidgeLoss(xDataVec, yDataVec, myLambda)
 
-    minimizer = gd.GradientDescent(np.zeros(numCoefs), myLearingRate, ridgeRegressionLossFunction, gd.BoldDriverEvolution(1.1, 0.5))
+    minimizer = gd.GradientDescent(np.zeros(numCoefs), myLearingRate, ridgeRegressionLossFunction,
+                                   gd.BoldDriverEvolution(1.1, 0.5))
 
     print("initial loss")
     print(ridgeRegressionLossFunction.evalLoss(minimizer.w))
@@ -76,7 +58,7 @@ for k in range (10):
         minimizer.step(numStepsPerIteration)
         print(ridgeRegressionLossFunction.evalLoss(minimizer.w))
         grad = ridgeRegressionLossFunction.evalGradient(minimizer.w)
-        #print(grad.transpose().dot(grad))
+        # print(grad.transpose().dot(grad))
         print("\n")
 
     print("final loss")
@@ -87,14 +69,12 @@ for k in range (10):
     print(minimizer.w)
     print("\n")
 
-
     yFit = [None] * len(YTest)
     for i in range(len(yFit)):
         yFit[i] = minimizer.w.transpose().dot(XTest[i])
 
     print("final RMS error")
     print(regression.RMSE(yFit, YTest))
-
 
 """
 
@@ -105,11 +85,3 @@ plt.plot(plotXValues, pFit(plotXValues), 'b')
 
 plt.show()
 """
-
-
-
-
-
-
-
-

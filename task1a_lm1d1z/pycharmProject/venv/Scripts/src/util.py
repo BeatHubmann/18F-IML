@@ -22,3 +22,13 @@ def generateDataFromPolynomial(p, xStart, xEnd, numPoints, noise):
 
     return (xValues, yData)
 
+#Expects: [[x_11, x_12, x_13, ...], [x_21, x_22, x_23], ...]
+#Returns: [vec(x_11, x_12, x_13), vec(x_21, x_22, x_23), ...]
+def makeDatapointsToVectors(xArray):
+    arrayLength = len(xArray)
+    xDataVec = [None] * arrayLength
+
+    for i in range(arrayLength):
+        xDataVec[i] = np.array(xArray[i])
+
+    return xDataVec
