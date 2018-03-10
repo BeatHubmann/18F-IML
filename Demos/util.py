@@ -28,8 +28,10 @@ def gradient_descent(w0, optimizer, regularizer, opts=dict()):
 
     for it in range(n_iter):
         # Sample indexes.
-        sampling_opts = {'algorithm': opts.get('algorithm', 'GD')}
-        i = sample_indexes(n_samples, batch_size, sampling_opts)
+        # sampling_opts = {'algorithm': opts.get('algorithm', 'GD')}
+        # i = sample_indexes(n_samples, batch_size, sampling_opts)
+        np.random.shuffle(indexes)
+        i = indexes[0:batch_size]
         index_traj[it, :] = i
 
         # Compute Gradient

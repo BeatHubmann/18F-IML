@@ -66,6 +66,7 @@ def plot_data(X, Y, fig=None, options=dict()):
         fig = plt.subplot(111)
     fig.plot(X, Y, options.get('marker', 'b*'), 
         label=options.get('label', 'Raw data'),
+        fillstyle=options.get('fillstyle', 'full'),
         ms=options.get('size', 8))
     process_plot(fig, options)
 
@@ -128,8 +129,7 @@ def plot_trajectory(w_trajectory, fig=None, options=dict()):
     return traj_plot
 
 
-def linear_regression_progression(X, Y, w_trajectory, index_trajectory, func, contourplot=None, dataplot=None,
-                                  options=dict()):
+def linear_regression_progression(X, Y, w_trajectory, index_trajectory, func, contourplot=None, dataplot=None, options=dict()):
     # Plot Contour
     if contourplot is not None:
         contour_opts = options.get('contour_opts', dict())
@@ -161,7 +161,8 @@ def linear_regression_progression(X, Y, w_trajectory, index_trajectory, func, co
             # Plot best fit line. 
             data_opts = options.get('data_opts', dict())
             x_idx = index_trajectory[idx]
-            if x_idx.size == 1:
+            #if x_idx.size == 1:
+            if data_opts.get('sgd_point', False):
                 opt = {'marker': 'mX', 'label': 'Current SGD point', 'size': 15}
                 plot_data(X[x_idx, -2], Y[x_idx], fig=dataplot, options=opt)
 
@@ -177,8 +178,7 @@ def linear_regression_progression(X, Y, w_trajectory, index_trajectory, func, co
     plt.close()
 
 
-def kernelized_regression_progression(X, Xtr, Ytr, alpha_trayectory, index_trajectory, regressor, fig=None,
-                                      options=dict()):
+def kernelized_regression_progression(X, Xtr, Ytr, alpha_trayectory, index_trajectory, regressor, fig=None, options=dict()):
     if fig is None:
         fig = plt.subplot(111)
 
@@ -189,7 +189,7 @@ def kernelized_regression_progression(X, Xtr, Ytr, alpha_trayectory, index_traje
             fig.lines.pop(-1)
 
         x_idx = index_trajectory[it]
-        if x_idx.size == 1:
+        if options.get('sgd_point', False):
             opt = {'marker': 'mX', 'label': 'Current SGD point', 'size': 15}
             plot_data(Xtr[x_idx], Ytr[x_idx], fig=fig, options=opt)
 
@@ -206,11 +206,17 @@ def kernelized_regression_progression(X, Xtr, Ytr, alpha_trayectory, index_traje
     plt.close()
 
 
-def classification_progression(X, Y, w_trajectory, index_trajectory, classifier, fig=None, options=dict()):
-    if fig is None:
-        fig = plt.subplot(111)
+def classification_progression(X, Y, w_trajectory, index_trajectory, classifier, contour_plot=None, error_plot=None, options=dict()):
+    if contour_plot is not None:
+        contour_opts = options.get('contour_opts', dict())
 
-    process_plot(fig, options)
+    if error_plot is not None:
+        error_opts = options.get('error_opts', dict())
+        current_error_line, = error_plot.plot([], [], error_opts.get('marker', 'g*-'), label='Current Loss') 
+        train_error_line, = error_plot.plot([], [], error_opts.get('marker', 'r*-'), label='Train Loss') 
+        test_error_line, = error_plot.plot([], [], error_opts.get('marker', 'b*-'), label='Test Loss')
+
+    process_plot(contour_plot, contour_opts)
 
     min_x = np.min(X[:, 0]);
     max_x = np.max(X[:, 0]);
@@ -227,30 +233,55 @@ def classification_progression(X, Y, w_trajectory, index_trajectory, classifier,
 
     n_iter = index_trajectory.shape[0]
 
+    current_idx = []
+    current_loss = []
+
+    train_loss = []
+    test_loss = []
+    test_idx = []
+
+    # error_plot.set_xlim([0, n_iter])
+    # error_plot.
     for it in range(n_iter):
-        while len(fig.lines) > 2:
-            fig.lines.pop(-1)
+        if contour_plot is not None:
+            while len(contour_plot.lines) > contour_opts.get('n_classes', 2):
+                contour_plot.lines.pop(-1)
 
-        if 'contour' in locals():
-            for c in contour.collections:
-                c.remove()
+            if 'contour' in locals():
+                for c in contour.collections:
+                    c.remove()
 
-        x_idx = index_trajectory[it]
-        if x_idx.size == 1:
-            opt = {'marker': 'mX', 'label': 'Current SGD point', 'size': 15}
-            plot_data(X[x_idx, 0], X[x_idx, 1], fig=fig, options=opt)
+            x_idx = index_trajectory[it]
+            if contour_opts.get('sgd_point', False):
+                opt = {'marker': 'mX', 'label': 'Current SGD point', 'size': 15}
+                plot_data(classifier._Xtr[x_idx, 0], classifier._Xtr[x_idx, 1], fig=contour_plot, options=opt)
 
-        w = w_trajectory[it + 1, :]
-        classifier.set_weights(w)
-        zg = classifier.predict(x1g)  # Replace this by func call
+            w = w_trajectory[it, :]
+            classifier.set_weights(w)
+            zg = classifier.predict(x1g)  # Replace this by func call
 
-        contour = fig.contourf(xg, yg, np.reshape(zg, newshape=xg.shape), alpha=0.3,
-                               cmap=matplotlib.cm.jet)  # colors=('blue', 'red'))
-        if 'cb' not in locals():
-            cb = plt.colorbar(contour)
-            # cb.set_clim(-1, 1)
-            # cb.set_ticks(np.arange(-1, 1, .25))
-        # cb.set_ticklabels(np.arange(-1, 1, .25))
+            contour = contour_plot.contourf(xg, yg, np.reshape(zg, newshape=xg.shape), alpha=0.3,
+                                   cmap=matplotlib.cm.jet)  # colors=('blue', 'red'))
+            # if 'cb' not in locals():
+            #     cb = contour_plot.colorbar(contour)
+
+        if error_plot is not None:
+            w = w_trajectory[it, :] 
+            current_idx.append(it)
+            current_loss.append(classifier.loss(w, index_trajectory[it]))
+            current_error_line.set_data(current_idx, current_loss)
+
+            if (it % error_opts.get('epoch', 1)) == 0:
+                test_idx.append(it)
+                test_loss.append(classifier.test_loss(w))
+                train_loss.append(classifier.loss(w))
+
+                test_error_line.set_data(test_idx, test_loss)
+                train_error_line.set_data(test_idx, train_loss)
+            
+            error_plot.relim()
+            error_plot.autoscale()
+            error_plot.legend(loc='upper right')
 
         plt.draw()
 
